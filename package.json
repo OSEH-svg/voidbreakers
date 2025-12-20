@@ -1,0 +1,26 @@
+{
+   "name": "voidbreakers",
+   "version": "1.0.0",
+   "type": "module",
+   "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview"
+   },
+   "keywords": [],
+   "author": "",
+   "license": "ISC",
+   "description": "",
+   "devDependencies": {
+      "@tailwindcss/vite": "^4.1.17",
+      "@vitejs/plugin-react": "^5.1.2",
+      "tailwindcss": "^4.1.17",
+      "vite": "^7.2.7"
+   },
+   "dependencies": {
+      "gsap": "^3.14.2",
+      "react": "^19.2.1",
+      "react-dom": "^19.2.1",
+      "react-router-dom": "^7.11.0"
+   }
+}
