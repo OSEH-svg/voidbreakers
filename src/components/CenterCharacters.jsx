@@ -1,4 +1,5 @@
 import React from "react";
+import charactersImage from "../assets/images/characters.png";
 
 const CenterCharacters = () => {
   return (
@@ -9,13 +10,13 @@ const CenterCharacters = () => {
         left: "45%",
         transform: "translateX(-50%)",
         zIndex: 5,
-         width: "auto",
+        width: "auto",
         height: "auto",
         maxWidth: "90vw",
       }}
     >
       <img
-        src="./src/assets/images/characters.png"
+        src={charactersImage}
         alt="Characters"
         style={{
           width: "auto",

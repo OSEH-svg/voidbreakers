@@ -1,13 +1,25 @@
 import React, { useState } from "react";
+import ariaCard from "../assets/images/ariaCard.png";
+import ariaTag from "../assets/images/ariaTag.svg";
+import bearGem from "../assets/icons/bearGem.svg";
+import cadenCard from "../assets/images/cadenCard.png";
+import cadenTag from "../assets/images/cadenTag.svg";
+import wolfGem from "../assets/icons/wolfGem.svg";
+import dravenCard from "../assets/images/dravenCard.png";
+import dravenTag from "../assets/images/dravenTag.svg";
+import bullGem from "../assets/icons/bullGem.svg";
+import arrowLeft from "../assets/icons/arrowLeft.svg";
+import arrowRight from "../assets/icons/arrowRight.svg";
+import coin from "../assets/icons/coin.svg";
 
 const RightMenu = () => {
   const cards = [
     {
       id: 0,
       name: "aria",
-      image: "./src/assets/images/ariaCard.png",
-      tag: "./src/assets/images/ariaTag.svg",
-      gem: "./src/assets/icons/bearGem.svg",
+      image: ariaCard,
+      tag: ariaTag,
+      gem: bearGem,
       lov: 5595,
       gemCount: 89,
 
@@ -29,16 +41,16 @@ const RightMenu = () => {
     {
       id: 1,
       name: "caden",
-      image: "./src/assets/images/cadenCard.png",
-      tag: "./src/assets/images/cadenTag.svg",
-      gem: "./src/assets/icons/wolfGem.svg",
+      image: cadenCard,
+      tag: cadenTag,
+      gem: wolfGem,
       lov: 1245,
       gemCount: 156,
 
       tagStyle: {
         bottom: "-58px",
         left: "45%",
-        transform: "translateX(-33%) rotate(-1deg)", 
+        transform: "translateX(-33%) rotate(-1deg)",
         width: "170px",
       },
 
@@ -52,16 +64,16 @@ const RightMenu = () => {
     {
       id: 2,
       name: "draven",
-      image: "./src/assets/images/dravenCard.png",
-      tag: "./src/assets/images/dravenTag.svg",
-      gem: "./src/assets/icons/bullGem.svg",
+      image: dravenCard,
+      tag: dravenTag,
+      gem: bullGem,
       lov: 145,
       gemCount: 203,
 
       tagStyle: {
         bottom: "-58px",
         left: "48%",
-        transform: "translateX(-38%) rotate(-1deg)", 
+        transform: "translateX(-38%) rotate(-1deg)",
         width: "170px",
       },
 
@@ -127,7 +139,7 @@ const RightMenu = () => {
             }`}
         >
           <img
-            src="./src/assets/icons/arrowLeft.svg"
+            src={arrowLeft}
             alt="Previous"
             className="w-full h-full"
             style={{
@@ -141,9 +153,10 @@ const RightMenu = () => {
           style={{
             position: "relative",
             width: "clamp(155px, 20vw, 250px)",
-            height: currentCard.name === "aria" 
-              ? "clamp(220px, 29.5vw, 370px)" 
-              : "clamp(243px, 31.2vw, 390px)",
+            height:
+              currentCard.name === "aria"
+                ? "clamp(220px, 29.5vw, 370px)"
+                : "clamp(243px, 31.2vw, 390px)",
             overflow: "hidden",
             transition: "all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
             transform: isTransitioning ? "scale(0.98)" : "scale(1)",
@@ -208,7 +221,7 @@ const RightMenu = () => {
             }}
           >
             <img
-              src="./src/assets/icons/coin.svg"
+              src={coin}
               alt="Coin"
               style={{
                 width: "clamp(14px, 1.6vw, 20px)",
@@ -257,7 +270,7 @@ const RightMenu = () => {
             }`}
         >
           <img
-            src="./src/assets/icons/arrowRight.svg"
+            src={arrowRight}
             alt="Next"
             className="w-full h-full"
             style={{
@@ -294,4 +307,4 @@ const RightMenu = () => {
   );
 };
 
-export default RightMenu; 
+export default RightMenu;

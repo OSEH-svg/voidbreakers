@@ -1,53 +1,77 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, memo } from "react";
 
 import bgImage from "../assets/images/gameBg.png";
 import boardFrame from "../assets/images/boardFrame.svg";
 import blank from "../assets/icons/blank.png";
-import sword from "../assets/icons/sword.svg";
+import sword from "../assets/icons/sword.png";
 
-import blueGem from "../assets/gameGems/blueGem.svg";
-import greenGem from "../assets/gameGems/greenGem.svg";
-import orangeGem from "../assets/gameGems/orangeGem.svg";
-import purpleGem from "../assets/gameGems/purpleGem.svg";
-import redGem from "../assets/gameGems/redGem.svg";
-import yellowGem from "../assets/gameGems/yellowGem.svg";
+import blueGem from "../assets/gameGems/blueGem.png";
+import greenGem from "../assets/gameGems/greenGem.png";
+import orangeGem from "../assets/gameGems/orangeGem.png";
+import purpleGem from "../assets/gameGems/purpleGem.png";
+import redGem from "../assets/gameGems/redGem.png";
+import yellowGem from "../assets/gameGems/yellowGem.png";
 
 import { animateTileFill } from "../animations/tileFillAnimation";
-import {
-  animateTileSwap,
-  animateTileSwapBack,
-  resetAllTilePositions,
-  clearTileCache,
-} from "../animations/tileSwapAnimation";
-import {
-  animateMatchBlast,
-  animateSpecialGemCreation,
-  animateRowBlastEffect,
-  animateColumnBlastEffect,
-  cleanupMatchAnimations,
-} from "../animations/matchBlastAnimation";
-import {
-  animateGemDrop,
-  animateNewGemSpawn,
-  animateBoardShake,
-  animateGemPress,
-  animateCrossBlast,
-  animateSpecialGemPulse,
-  cleanupAnimations,
-  clearGemCache,
-} from "../animations/advancedAnimations";
-
-import FPSCounter from "../components/FPSCounter";
 
 const WIDTH = 8;
 const gemColors = [blueGem, greenGem, orangeGem, purpleGem, redGem, yellowGem];
+const MAX_CASCADES = 50;
+
+// Memoized Gem Component
+const GemCell = memo(
+  ({ gem, index, isProcessing, isSelected, onClick }) => {
+    const isSword =
+      gem.modifier === "vertical-sword" || gem.modifier === "horizontal-sword";
+    const isHorizontal = gem.modifier === "horizontal-sword";
+
+    return (
+      <div
+        className={`tile-item gpu-accelerated flex items-center justify-center border transition-all cursor-pointer
+        ${
+          isSelected
+            ? "border-yellow-400 border-4 bg-yellow-400/20 scale-110 shadow-lg shadow-yellow-400/50"
+            : "border-white/5 hover:border-white/30 hover:bg-white/5"
+        }`}
+        style={{
+          width: "calc(100% / 8)",
+          height: "calc(100% / 8)",
+        }}
+        data-index={index}
+        onClick={() => !isProcessing && onClick(index)}
+      >
+        <img
+          src={isSword ? sword : gem.color}
+          alt={isSword ? "Sword" : "Gem"}
+          className={`w-full h-full object-contain p-1 pointer-events-none ${
+            isSword
+              ? isHorizontal
+                ? "sword-horizontal"
+                : "sword-vertical"
+              : ""
+          }`}
+          loading="eager"
+        />
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.gem.color === nextProps.gem.color &&
+      prevProps.gem.modifier === nextProps.gem.modifier &&
+      prevProps.isProcessing === nextProps.isProcessing &&
+      prevProps.isSelected === nextProps.isSelected
+    );
+  }
+);
+
+GemCell.displayName = "GemCell";
 
 const Gameplay = () => {
   const [gems, setGems] = useState([]);
   const currentGems = useRef([]);
   const [score, setScore] = useState(0);
-  const [draggedGem, setDraggedGem] = useState(null);
-  const [replacedGem, setReplacedGem] = useState(null);
+  const [selectedGem, setSelectedGem] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const updateScore = useCallback((num) => {
@@ -55,31 +79,16 @@ const Gameplay = () => {
   }, []);
 
   const playSound = useCallback((id) => {
-    const audio = document.getElementById(id);
-    if (audio) {
-      audio.currentTime = 0;
-      audio.play().catch((err) => console.log("Audio play failed:", err));
-    }
+    console.log(`Play sound: ${id}`);
   }, []);
 
   const setColToBlank = useCallback(
-    async (index) => {
+    (index) => {
       const col = index % WIDTH;
-      const columnIndexes = [];
-
       for (let i = 0; i < WIDTH; i++) {
-        columnIndexes.push(col + i * WIDTH);
+        currentGems.current[col + i * WIDTH].color = blank;
+        currentGems.current[col + i * WIDTH].modifier = "";
       }
-
-      // Animate column blast
-      await animateColumnBlastEffect(col, WIDTH);
-
-      // Clear after animation
-      columnIndexes.forEach((idx) => {
-        currentGems.current[idx].color = blank;
-        currentGems.current[idx].modifier = "";
-      });
-
       updateScore(WIDTH);
       playSound("lineBlast");
     },
@@ -87,198 +96,192 @@ const Gameplay = () => {
   );
 
   const setRowToBlank = useCallback(
-    async (index) => {
+    (index) => {
       const row = Math.floor(index / WIDTH);
-      const rowIndexes = [];
-
       for (let i = row * WIDTH; i < row * WIDTH + WIDTH; i++) {
-        rowIndexes.push(i);
+        currentGems.current[i].color = blank;
+        currentGems.current[i].modifier = "";
       }
-
-      // Animate row blast
-      await animateRowBlastEffect(row, WIDTH);
-
-      // Clear after animation
-      rowIndexes.forEach((idx) => {
-        currentGems.current[idx].color = blank;
-        currentGems.current[idx].modifier = "";
-      });
-
       updateScore(WIDTH);
       playSound("lineBlast");
     },
     [updateScore, playSound]
   );
 
-  const getGemImage = useCallback((color, modifier) => {
-    if (modifier === "horizontal-match" || modifier === "vertical-match") {
-      return sword;
-    }
-    return color;
-  }, []);
+  // Check for EXACTLY 4 matches in columns
+  const checkForColumnFour = useCallback(
+    (swapIndexes = null) => {
+      let foundMatch = false;
 
-  const checkForColumns = useCallback(
-    async (num, indexes = null) => {
-      for (let i = 0; i < WIDTH * WIDTH - (num - 1) * WIDTH; i++) {
-        const columns = [];
-        for (let j = 0; j < num; j++) {
-          columns.push(i + j * WIDTH);
-        }
-
+      for (let i = 0; i < WIDTH * WIDTH - 3 * WIDTH; i++) {
+        const column = [i, i + WIDTH, i + WIDTH * 2, i + WIDTH * 3];
         const decidedColor = currentGems.current[i].color;
-        const isBlank = decidedColor === blank;
 
-        if (isBlank) continue;
+        if (decidedColor === blank) continue;
 
+        // Check if all 4 match
         if (
-          columns.every(
-            (square) => currentGems.current[square].color === decidedColor
-          )
+          column.every((idx) => currentGems.current[idx].color === decidedColor)
         ) {
-          updateScore(num);
+          foundMatch = true;
+          updateScore(4);
+          playSound("matchOfFour");
 
-          let specialGemIndex = -1;
-          if (num > 3) {
-            specialGemIndex = columns.findIndex((col) =>
-              indexes?.includes(col)
-            );
-            if (specialGemIndex === -1) specialGemIndex = 0;
-            playSound("matchOfFour");
+          // Determine where sword appears
+          let swordIndex = column[1]; // Default: 2nd position
+          if (swapIndexes && column.includes(swapIndexes[0])) {
+            swordIndex = swapIndexes[0]; // Spawn at swap origin
+          } else if (swapIndexes && column.includes(swapIndexes[1])) {
+            swordIndex = swapIndexes[1];
           }
 
-          const indexesToAnimate = [];
-
-          // Check each gem in the match
-          for (let j = 0; j < columns.length; j++) {
-            const gemIndex = columns[j];
-
-            // If this gem is already a special gem (sword), trigger its effect
-            if (currentGems.current[gemIndex].modifier) {
-              if (currentGems.current[gemIndex].modifier === "vertical-match") {
-                await setColToBlank(gemIndex);
-              } else if (
-                currentGems.current[gemIndex].modifier === "horizontal-match"
-              ) {
-                await setRowToBlank(gemIndex);
-              }
-            } else if (j === specialGemIndex) {
-              // This position will become a special gem
-              currentGems.current[gemIndex].modifier = "vertical-match";
+          // Process each tile in the match
+          column.forEach((idx) => {
+            if (currentGems.current[idx].modifier === "vertical-sword") {
+              // Existing sword in match → activate it
+              setColToBlank(idx);
+            } else if (
+              currentGems.current[idx].modifier === "horizontal-sword"
+            ) {
+              setRowToBlank(idx);
+            } else if (idx === swordIndex) {
+              // Create vertical sword at this position
+              currentGems.current[idx].modifier = "vertical-sword";
             } else {
-              // Regular gem to be blasted
-              indexesToAnimate.push(gemIndex);
-            }
-          }
-
-          // Animate the blast for regular gems
-          if (indexesToAnimate.length > 0) {
-            await animateMatchBlast(
-              indexesToAnimate,
-              currentGems.current,
-              WIDTH
-            );
-
-            // Clear after animation
-            indexesToAnimate.forEach((idx) => {
+              // Clear normal gem
               currentGems.current[idx].color = blank;
               currentGems.current[idx].modifier = "";
-            });
-          }
+            }
+          });
 
-          // Animate special gem creation if one was made
-          if (specialGemIndex !== -1) {
-            await animateSpecialGemCreation(columns[specialGemIndex]);
-            // Add continuous pulse to special gem
-            animateSpecialGemPulse(columns[specialGemIndex]);
-          }
-
-          return true; // Return immediately after first match
+          return true; // Found one match, stop checking
         }
       }
 
-      return false;
+      return foundMatch;
     },
     [updateScore, playSound, setColToBlank, setRowToBlank]
   );
 
-  const checkForRows = useCallback(
-    async (num, indexes = null) => {
+  // Check for EXACTLY 4 matches in rows
+  const checkForRowFour = useCallback(
+    (swapIndexes = null) => {
+      let foundMatch = false;
+
       for (let i = 0; i < WIDTH * WIDTH; i++) {
-        const rows = [];
-        for (let j = 0; j < num; j++) {
-          rows.push(i + j);
-        }
-
+        const row = [i, i + 1, i + 2, i + 3];
         const decidedColor = currentGems.current[i].color;
-        const isBlank = decidedColor === blank;
 
-        if (WIDTH - (i % WIDTH) < num || isBlank) continue;
+        // Check if row wraps around
+        if (i % WIDTH > WIDTH - 4 || decidedColor === blank) continue;
 
+        // Check if all 4 match
         if (
-          rows.every(
-            (square) => currentGems.current[square].color === decidedColor
-          )
+          row.every((idx) => currentGems.current[idx].color === decidedColor)
         ) {
-          updateScore(num);
+          foundMatch = true;
+          updateScore(4);
+          playSound("matchOfFour");
 
-          let specialGemIndex = -1;
-          if (num > 3) {
-            specialGemIndex = rows.findIndex((row) => indexes?.includes(row));
-            if (specialGemIndex === -1) specialGemIndex = 0;
-            playSound("matchOfFour");
+          // Determine where sword appears
+          let swordIndex = row[1]; // Default: 2nd position
+          if (swapIndexes && row.includes(swapIndexes[0])) {
+            swordIndex = swapIndexes[0]; // Spawn at swap origin
+          } else if (swapIndexes && row.includes(swapIndexes[1])) {
+            swordIndex = swapIndexes[1];
           }
 
-          const indexesToAnimate = [];
-
-          for (let j = 0; j < rows.length; j++) {
-            const gemIndex = rows[j];
-
-            if (currentGems.current[gemIndex].modifier) {
-              if (currentGems.current[gemIndex].modifier === "vertical-match") {
-                await setColToBlank(gemIndex);
-              } else if (
-                currentGems.current[gemIndex].modifier === "horizontal-match"
-              ) {
-                await setRowToBlank(gemIndex);
-              }
-            } else if (j === specialGemIndex) {
-              currentGems.current[gemIndex].modifier = "horizontal-match";
+          // Process each tile in the match
+          row.forEach((idx) => {
+            if (currentGems.current[idx].modifier === "vertical-sword") {
+              // Existing sword in match → activate it
+              setColToBlank(idx);
+            } else if (
+              currentGems.current[idx].modifier === "horizontal-sword"
+            ) {
+              setRowToBlank(idx);
+            } else if (idx === swordIndex) {
+              // Create horizontal sword at this position
+              currentGems.current[idx].modifier = "horizontal-sword";
             } else {
-              indexesToAnimate.push(gemIndex);
-            }
-          }
-
-          if (indexesToAnimate.length > 0) {
-            await animateMatchBlast(
-              indexesToAnimate,
-              currentGems.current,
-              WIDTH
-            );
-
-            indexesToAnimate.forEach((idx) => {
+              // Clear normal gem
               currentGems.current[idx].color = blank;
               currentGems.current[idx].modifier = "";
-            });
-          }
+            }
+          });
 
-          if (specialGemIndex !== -1) {
-            await animateSpecialGemCreation(rows[specialGemIndex]);
-            animateSpecialGemPulse(rows[specialGemIndex]);
-          }
-
-          return true;
+          return true; // Found one match, stop checking
         }
       }
 
-      return false;
+      return foundMatch;
     },
     [updateScore, playSound, setColToBlank, setRowToBlank]
   );
+
+  // Check for regular 3-matches (no sword creation)
+  const checkForThree = useCallback(() => {
+    let foundMatch = false;
+
+    // Check columns
+    for (let i = 0; i < WIDTH * WIDTH - 2 * WIDTH; i++) {
+      const column = [i, i + WIDTH, i + WIDTH * 2];
+      const decidedColor = currentGems.current[i].color;
+
+      if (decidedColor === blank) continue;
+
+      if (
+        column.every((idx) => currentGems.current[idx].color === decidedColor)
+      ) {
+        foundMatch = true;
+        updateScore(3);
+
+        column.forEach((idx) => {
+          if (currentGems.current[idx].modifier === "vertical-sword") {
+            setColToBlank(idx);
+          } else if (currentGems.current[idx].modifier === "horizontal-sword") {
+            setRowToBlank(idx);
+          } else {
+            currentGems.current[idx].color = blank;
+            currentGems.current[idx].modifier = "";
+          }
+        });
+
+        return true;
+      }
+    }
+
+    // Check rows
+    for (let i = 0; i < WIDTH * WIDTH; i++) {
+      const row = [i, i + 1, i + 2];
+      const decidedColor = currentGems.current[i].color;
+
+      if (i % WIDTH > WIDTH - 3 || decidedColor === blank) continue;
+
+      if (row.every((idx) => currentGems.current[idx].color === decidedColor)) {
+        foundMatch = true;
+        updateScore(3);
+
+        row.forEach((idx) => {
+          if (currentGems.current[idx].modifier === "vertical-sword") {
+            setColToBlank(idx);
+          } else if (currentGems.current[idx].modifier === "horizontal-sword") {
+            setRowToBlank(idx);
+          } else {
+            currentGems.current[idx].color = blank;
+            currentGems.current[idx].modifier = "";
+          }
+        });
+
+        return true;
+      }
+    }
+
+    return foundMatch;
+  }, [updateScore, setColToBlank, setRowToBlank]);
 
   const moveIntoGemBelow = useCallback(() => {
     let moved = false;
-    const movedIndexes = [];
-    const newGemIndexes = [];
 
     for (let i = WIDTH * WIDTH - 1; i >= 0; i--) {
       const isFirstRow = i < WIDTH;
@@ -287,8 +290,8 @@ const Gameplay = () => {
         const randomColor =
           gemColors[Math.floor(Math.random() * gemColors.length)];
         currentGems.current[i].color = randomColor;
+        currentGems.current[i].modifier = "";
         moved = true;
-        newGemIndexes.push(i);
       }
 
       if (
@@ -301,11 +304,10 @@ const Gameplay = () => {
         currentGems.current[i].color = blank;
         currentGems.current[i].modifier = "";
         moved = true;
-        movedIndexes.push(i + WIDTH);
       }
     }
 
-    return { moved, movedIndexes, newGemIndexes };
+    return moved;
   }, []);
 
   const processMatches = useCallback(async () => {
@@ -313,177 +315,146 @@ const Gameplay = () => {
     setIsProcessing(true);
 
     let hasChanges = true;
-    let updateNeeded = false;
+    let cascadeCount = 0;
 
-    while (hasChanges) {
+    while (hasChanges && cascadeCount < MAX_CASCADES) {
       hasChanges = false;
+      cascadeCount++;
 
-      // Check all match types WITHOUT updating state between each
-      const foundColumn4 = await checkForColumns(4);
-      const foundRow4 = !foundColumn4 && (await checkForRows(4));
-      const foundColumn3 =
-        !(foundColumn4 || foundRow4) && (await checkForColumns(3));
-      const foundRow3 =
-        !(foundColumn4 || foundRow4 || foundColumn3) && (await checkForRows(3));
+      // Priority: Check 4-matches first, then 3-matches
+      const foundFourColumn = checkForColumnFour();
+      const foundFourRow = !foundFourColumn && checkForRowFour();
+      const foundThree = !(foundFourColumn || foundFourRow) && checkForThree();
 
-      if (foundColumn4 || foundRow4 || foundColumn3 || foundRow3) {
+      if (foundFourColumn || foundFourRow || foundThree) {
         hasChanges = true;
-        updateNeeded = true;
-        // Single state update after all checks
+        // CRITICAL: Update display immediately after match
         setGems([...currentGems.current]);
-        await new Promise((resolve) => setTimeout(resolve, 250)); // Slightly faster
-        continue;
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => {
+            setTimeout(resolve, 50);
+          })
+        );
       }
 
-      // Move gems down
-      const { moved, movedIndexes, newGemIndexes } = moveIntoGemBelow();
+      const moved = moveIntoGemBelow();
       if (moved) {
         hasChanges = true;
-        updateNeeded = true;
+        // CRITICAL: Update display immediately after move
         setGems([...currentGems.current]);
-
-        // Animate drops and new spawns
-        await animateGemDrop(movedIndexes, WIDTH);
-        await animateNewGemSpawn(newGemIndexes, WIDTH);
-        await new Promise((resolve) => setTimeout(resolve, 150)); // Slightly faster
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => {
+            setTimeout(resolve, 50);
+          })
+        );
       }
     }
 
-    // Only reset positions if something actually changed
-    if (updateNeeded) {
-      resetAllTilePositions(WIDTH * WIDTH);
-    }
-
+    // CRITICAL: Final sync to ensure display matches data
+    setGems([...currentGems.current]);
     setIsProcessing(false);
-  }, [isProcessing, checkForColumns, checkForRows, moveIntoGemBelow]);
+  }, [
+    isProcessing,
+    checkForColumnFour,
+    checkForRowFour,
+    checkForThree,
+    moveIntoGemBelow,
+  ]);
 
-  const dragStart = useCallback(
-    (e) => {
-      if (isProcessing) {
-        e.preventDefault();
-        return;
-      }
-      setDraggedGem(e.target);
-
-      const index = parseInt(e.target.getAttribute("data-index"));
-      animateGemPress(index);
-    },
-    [isProcessing]
-  );
-
-  const dragDrop = useCallback((e) => {
-    setReplacedGem(e.target);
-  }, []);
-
-  const dragEnd = useCallback(
-    async (e) => {
-      if (isProcessing || !draggedGem || !replacedGem) return;
-
-      const draggedGemIndex = parseInt(draggedGem.getAttribute("data-index"));
-      const replacedGemIndex = parseInt(replacedGem.getAttribute("data-index"));
-
-      const validMoves = [
-        draggedGemIndex - 1,
-        draggedGemIndex - WIDTH,
-        draggedGemIndex + 1,
-        draggedGemIndex + WIDTH,
-      ];
-
-      const validMove = validMoves.includes(replacedGemIndex);
-
-      if (!validMove) {
-        setDraggedGem(null);
-        setReplacedGem(null);
-        return;
-      }
-
+  const swapGems = useCallback(
+    async (index1, index2) => {
+      if (isProcessing) return;
       setIsProcessing(true);
 
-      // Animate the swap
-      await animateTileSwap(draggedGemIndex, replacedGemIndex, WIDTH);
+      const gem1 = currentGems.current[index1];
+      const gem2 = currentGems.current[index2];
 
-      const draggedIsSpecial = currentGems.current[draggedGemIndex].modifier;
-      const replacedIsSpecial = currentGems.current[replacedGemIndex].modifier;
+      const isSword1 =
+        gem1.modifier === "vertical-sword" ||
+        gem1.modifier === "horizontal-sword";
+      const isSword2 =
+        gem2.modifier === "vertical-sword" ||
+        gem2.modifier === "horizontal-sword";
 
-      // Two swords combined - MEGA BLAST!
-      if (draggedIsSpecial && replacedIsSpecial) {
-        await animateCrossBlast(draggedGemIndex, replacedGemIndex, WIDTH);
-        await animateBoardShake("heavy");
-
-        await setRowToBlank(replacedGemIndex);
-        await setColToBlank(draggedGemIndex);
+      // SWORD + SWORD = CROSS BLAST (no color check needed)
+      if (isSword1 && isSword2) {
+        setRowToBlank(index1);
+        setColToBlank(index1);
+        setSelectedGem(null);
+        setGems([...currentGems.current]); // Sync immediately
         playSound("correctMove");
-
-        setDraggedGem(null);
-        setReplacedGem(null);
-        setGems([...currentGems.current]);
         await processMatches();
         return;
       }
 
-      // Regular swap - check for matches
-      const tempColor = currentGems.current[draggedGemIndex].color;
-      const tempModifier = currentGems.current[draggedGemIndex].modifier;
-
-      currentGems.current[draggedGemIndex].color =
-        currentGems.current[replacedGemIndex].color;
-      currentGems.current[draggedGemIndex].modifier =
-        currentGems.current[replacedGemIndex].modifier;
-
-      currentGems.current[replacedGemIndex].color = tempColor;
-      currentGems.current[replacedGemIndex].modifier = tempModifier;
-
-      const isAColumnOfFour = await checkForColumns(4, [
-        draggedGemIndex,
-        replacedGemIndex,
-      ]);
-      const isARowOfFour = isAColumnOfFour
-        ? false
-        : await checkForRows(4, [draggedGemIndex, replacedGemIndex]);
-      const isAColumnOfThree =
-        isAColumnOfFour || isARowOfFour ? false : await checkForColumns(3);
-      const isARowOfThree =
-        isAColumnOfFour || isARowOfFour || isAColumnOfThree
-          ? false
-          : await checkForRows(3);
-
-      if (
-        isAColumnOfFour ||
-        isARowOfFour ||
-        isAColumnOfThree ||
-        isARowOfThree
-      ) {
+      // SWORD + ANY GEM = ACTIVATE (no color check needed - Royal Match style)
+      if (isSword1) {
+        if (gem1.modifier === "vertical-sword") {
+          setColToBlank(index1);
+        } else {
+          setRowToBlank(index1);
+        }
+        setSelectedGem(null);
+        setGems([...currentGems.current]); // Sync immediately
         playSound("correctMove");
-        setDraggedGem(null);
-        setReplacedGem(null);
-        setGems([...currentGems.current]);
+        await processMatches();
+        return;
+      }
+
+      if (isSword2) {
+        if (gem2.modifier === "vertical-sword") {
+          setColToBlank(index2);
+        } else {
+          setRowToBlank(index2);
+        }
+        setSelectedGem(null);
+        setGems([...currentGems.current]); // Sync immediately
+        playSound("correctMove");
+        await processMatches();
+        return;
+      }
+
+      // REGULAR SWAP
+      const tempColor = gem1.color;
+      const tempModifier = gem1.modifier;
+
+      currentGems.current[index1].color = gem2.color;
+      currentGems.current[index1].modifier = gem2.modifier;
+      currentGems.current[index2].color = tempColor;
+      currentGems.current[index2].modifier = tempModifier;
+
+      // CRITICAL: Show swap immediately
+      setGems([...currentGems.current]);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Check if swap created a match (pass swap indexes for sword positioning)
+      const foundFourColumn = checkForColumnFour([index1, index2]);
+      const foundFourRow =
+        !foundFourColumn && checkForRowFour([index1, index2]);
+      const foundThree = !(foundFourColumn || foundFourRow) && checkForThree();
+
+      if (foundFourColumn || foundFourRow || foundThree) {
+        playSound("correctMove");
+        setSelectedGem(null);
+        setGems([...currentGems.current]); // Sync immediately
         await processMatches();
       } else {
-        // Invalid move - swap back
-        currentGems.current[replacedGemIndex].color =
-          currentGems.current[draggedGemIndex].color;
-        currentGems.current[replacedGemIndex].modifier =
-          currentGems.current[draggedGemIndex].modifier;
+        // Swap back - invalid move
+        currentGems.current[index2].color = gem1.color;
+        currentGems.current[index2].modifier = gem1.modifier;
+        currentGems.current[index1].color = tempColor;
+        currentGems.current[index1].modifier = tempModifier;
 
-        currentGems.current[draggedGemIndex].color = tempColor;
-        currentGems.current[draggedGemIndex].modifier = tempModifier;
-
-        await animateTileSwapBack(draggedGemIndex, replacedGemIndex);
-        await animateBoardShake("light");
-
-        setGems([...currentGems.current]);
+        setGems([...currentGems.current]); // Sync immediately
         playSound("wrongMove");
-        setDraggedGem(null);
-        setReplacedGem(null);
         setIsProcessing(false);
       }
     },
     [
       isProcessing,
-      draggedGem,
-      replacedGem,
-      checkForColumns,
-      checkForRows,
+      checkForColumnFour,
+      checkForRowFour,
+      checkForThree,
       processMatches,
       playSound,
       setRowToBlank,
@@ -491,13 +462,77 @@ const Gameplay = () => {
     ]
   );
 
-  const createBoard = useCallback(() => {
-    // Clean up all animation caches
-    cleanupAnimations();
-    clearGemCache();
-    cleanupMatchAnimations();
-    clearTileCache();
+  const handleGemClick = useCallback(
+    (index) => {
+      if (isProcessing) return;
 
+      if (selectedGem === null) {
+        setSelectedGem(index);
+        playSound("gemSelect");
+      } else if (selectedGem === index) {
+        setSelectedGem(null);
+      } else {
+        const validMoves = [
+          selectedGem - 1,
+          selectedGem - WIDTH,
+          selectedGem + 1,
+          selectedGem + WIDTH,
+        ];
+
+        if (validMoves.includes(index)) {
+          swapGems(selectedGem, index);
+        } else {
+          setSelectedGem(index);
+          playSound("gemSelect");
+        }
+      }
+    },
+    [selectedGem, isProcessing, swapGems, playSound]
+  );
+
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (isProcessing || selectedGem === null) return;
+
+      const row = Math.floor(selectedGem / WIDTH);
+      const col = selectedGem % WIDTH;
+      let newIndex = null;
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          if (row > 0) newIndex = selectedGem - WIDTH;
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (row < WIDTH - 1) newIndex = selectedGem + WIDTH;
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          if (col > 0) newIndex = selectedGem - 1;
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          if (col < WIDTH - 1) newIndex = selectedGem + 1;
+          break;
+        case "Escape":
+          e.preventDefault();
+          setSelectedGem(null);
+          break;
+        default:
+          return;
+      }
+
+      if (newIndex !== null) {
+        swapGems(selectedGem, newIndex);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [selectedGem, isProcessing, swapGems]);
+
+  const createBoard = useCallback(() => {
     const randomGems = [];
     for (let i = 0; i < WIDTH * WIDTH; i++) {
       const randomColor =
@@ -514,19 +549,11 @@ const Gameplay = () => {
 
   useEffect(() => {
     createBoard();
-
-    // Cleanup on unmount
-    return () => {
-      cleanupAnimations();
-      clearGemCache();
-      cleanupMatchAnimations();
-      clearTileCache();
-    };
   }, [createBoard]);
 
   return (
     <div
-      className="w-screen h-screen flex flex-col items-center justify-center game"
+      className="w-screen h-screen flex flex-col items-center justify-center"
       style={{
         backgroundImage: `url(${bgImage})`,
         backgroundSize: "cover",
@@ -534,47 +561,36 @@ const Gameplay = () => {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <FPSCounter />
+      <div className="absolute top-4 left-4 bg-black/70 text-white px-4 py-2 rounded-lg text-sm">
+        <p className="font-bold mb-1">🎮 Royal Match Style</p>
+        <p>🖱️ Click gem to select</p>
+        <p>⌨️ Arrow keys to swap</p>
+        <p>⚔️ Sword + ANY gem = Blast!</p>
+        <p>ESC to deselect</p>
+      </div>
+
       <div className="text-2xl px-6 py-3 mb-4 bg-purple-700 text-white rounded-md border-2 border-white pointer-events-none">
         <span>Score: </span> <b>{score}</b>
       </div>
 
-      <div className="game-board-container">
-        <div className="relative w-[90vw] max-w-[560px] aspect-square">
-          <img
-            src={boardFrame}
-            alt="Board Frame"
-            className="absolute inset-0 w-full h-full z-20 pointer-events-none select-none"
-          />
+      <div className="relative w-[90vw] max-w-[560px] aspect-square">
+        <img
+          src={boardFrame}
+          alt="Board Frame"
+          className="absolute inset-0 w-full h-full z-20 pointer-events-none select-none"
+        />
 
-          <div className="absolute inset-[8%] flex flex-wrap z-10">
-            {gems.map(({ color, modifier }, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-center border border-white/5"
-                style={{
-                  width: "calc(100% / 8)",
-                  height: "calc(100% / 8)",
-                }}
-                data-index={index}
-                data-src={color}
-                data-modifier={modifier}
-                draggable={!isProcessing}
-                onDragStart={dragStart}
-                onDragOver={(e) => e.preventDefault()}
-                onDragEnter={(e) => e.preventDefault()}
-                onDragLeave={(e) => e.preventDefault()}
-                onDrop={dragDrop}
-                onDragEnd={dragEnd}
-              >
-                <img
-                  src={getGemImage(color, modifier)}
-                  alt="Gem"
-                  className="w-full h-full object-contain p-1 pointer-events-none"
-                />
-              </div>
-            ))}
-          </div>
+        <div className="tile-grid absolute inset-[8%] flex flex-wrap z-10">
+          {gems.map((gem, index) => (
+            <GemCell
+              key={index}
+              gem={gem}
+              index={index}
+              isProcessing={isProcessing}
+              isSelected={selectedGem === index}
+              onClick={handleGemClick}
+            />
+          ))}
         </div>
       </div>
     </div>

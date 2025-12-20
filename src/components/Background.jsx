@@ -1,15 +1,17 @@
 import React from "react";
+import backgroundImage from "../assets/images/gameBg.png";
 
 const Background = () => {
   return (
     <div
+      className="bg-optimized"
       style={{
         position: "fixed",
         top: 0,
         left: 0,
         width: "100vw",
         height: "100vh",
-        backgroundImage: "url('./src/assets/images/Background Image.png')",
+        backgroundImage: `url(${backgroundImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center center",
         backgroundRepeat: "no-repeat",
@@ -17,8 +19,10 @@ const Background = () => {
       }}
     >
       <img
-        src="./src/assets/images/Background Image.png"
+        src={backgroundImage}
         alt=""
+        loading="eager"
+        fetchpriority="high"
         style={{
           position: "absolute",
           top: 0,
