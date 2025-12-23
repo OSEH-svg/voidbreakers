@@ -4,8 +4,13 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+
   base: "./",
+
   build: {
+    target: "esnext",
+    minify: "esbuild",
+
     rollupOptions: {
       output: {
         assetFileNames: "assets/[name].[hash][extname]",
@@ -13,20 +18,18 @@ export default defineConfig({
         entryFileNames: "assets/[name].[hash].js",
       },
     },
-    target: "es2015",
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
   },
+
+  esbuild: {
+    target: "esnext", 
+  },
+
   server: {
     fs: {
       strict: false,
     },
   },
+
   optimizeDeps: {
     include: ["react", "react-dom"],
   },
