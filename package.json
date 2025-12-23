@@ -15,6 +15,7 @@
       "@tailwindcss/vite": "^4.1.17",
       "@vitejs/plugin-react": "^5.1.2",
       "tailwindcss": "^4.1.17",
+      "terser": "^5.44.1",
       "vite": "^7.2.7"
    },
    "dependencies": {
