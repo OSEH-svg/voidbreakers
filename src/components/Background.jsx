@@ -1,5 +1,5 @@
 import React from "react";
-import backgroundImage from "../assets/images/gameBg.png";
+import backgroundImage from "../assets/images/Background Image.png";
 
 const Background = () => {
   return (

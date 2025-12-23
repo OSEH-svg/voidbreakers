@@ -148,7 +148,6 @@ const RightMenu = () => {
           />
         </button>
 
-        {/* Main card container */}
         <div
           style={{
             position: "relative",
@@ -172,7 +171,6 @@ const RightMenu = () => {
           />
         </div>
 
-        {/* Character Tag */}
         <div
           style={{
             position: "absolute",
@@ -253,7 +251,6 @@ const RightMenu = () => {
           </div>
         </div>
 
-        {/* Right arrow */}
         <button
           onClick={goToNext}
           style={{

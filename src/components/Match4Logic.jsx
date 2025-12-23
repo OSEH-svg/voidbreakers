@@ -1,15 +1,13 @@
 import { useCallback } from "react";
 
-// Enhanced tile data model
 export const createTile = (color, modifier = "") => ({
   color,
   modifier,
-  orientation: "", // "vertical" | "horizontal" (only for swords)
+  orientation: "",
   isSword: false,
   swordColor: null,
 });
 
-// Color mapping from gem images to color names
 export const GEM_COLOR_MAP = {
   yellowGem: "yellow",
   blueGem: "blue",
@@ -19,7 +17,6 @@ export const GEM_COLOR_MAP = {
   orangeGem: "orange",
 };
 
-// Sword configuration
 export const SWORD_CONFIG = {
   orientations: {
     vertical: { rotation: 0, transformOrigin: "center center" },
@@ -35,7 +32,6 @@ export const SWORD_CONFIG = {
   },
 };
 
-// Helper function to get color name from gem image
 export const getColorName = (gemImage) => {
   if (!gemImage) return "blue";
   const imageName = gemImage.split("/").pop().replace(".png", "");
@@ -43,12 +39,10 @@ export const getColorName = (gemImage) => {
 };
 
 export const Match4Logic = {
-  // Check if a tile should become a sword based on match
   shouldCreateSword: (matchLength, isPartOfMatch, tileIndex) => {
     return matchLength >= 4 && isPartOfMatch.includes(tileIndex);
   },
 
-  // Create sword tile from regular tile
   createSwordTile: (tile, orientation, matchColor) => {
     const colorName = getColorName(matchColor);
     console.log("Creating sword:", {
@@ -82,7 +76,6 @@ export const Match4Logic = {
     };
   },
 
-  // Check if sword activation should trigger
   shouldActivateSword: (currentTile, targetTile) => {
     if (!currentTile.isSword || !targetTile.color) return false;
 
@@ -112,7 +105,6 @@ export const Match4Logic = {
     return null;
   },
 
-  // Get blast effect for sword activation
   getBlastEffect: (activationType, tileIndex, boardWidth) => {
     const row = Math.floor(tileIndex / boardWidth);
     const col = tileIndex % boardWidth;
@@ -134,7 +126,7 @@ export const Match4Logic = {
         }
 
       case "cross-blast":
-        // Cross blast (both row and column)
+        // Cross blast 
         const rowIndexes = Array.from(
           { length: 8 },
           (_, i) => row * boardWidth + i
@@ -153,7 +145,6 @@ export const Match4Logic = {
     }
   },
 
-  // Performance-optimized sword rendering class names
   getSwordClassName: (tile, isAnimating = false) => {
     const baseClasses = ["sword-tile"];
 
@@ -168,12 +159,10 @@ export const Match4Logic = {
     return baseClasses.join(" ");
   },
 
-  // Create match detection with sword creation
   detectMatches: (tiles, boardWidth) => {
     const matches = [];
     const swordsToCreate = [];
 
-    // Check horizontal matches
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col <= 8 - 3; col++) {
         const matchTiles = [];
@@ -181,7 +170,6 @@ export const Match4Logic = {
 
         if (!baseColor || baseColor === "blank") continue;
 
-        // Find continuous matching tiles
         for (let i = 0; i < 8 - col; i++) {
           const tileIndex = row * boardWidth + col + i;
           if (tiles[tileIndex].color === baseColor) {
@@ -191,7 +179,6 @@ export const Match4Logic = {
           }
         }
 
-        // Check if we have a valid match
         if (matchTiles.length >= 3) {
           const isPartOfMatch = matchTiles;
           const shouldCreateSword = matchTiles.length >= 4;
@@ -205,7 +192,6 @@ export const Match4Logic = {
             shouldCreateSword,
           });
 
-          // Mark tiles for sword creation if needed
           if (shouldCreateSword) {
             const swordIndex = matchTiles[Math.floor(matchTiles.length / 2)];
             swordsToCreate.push({

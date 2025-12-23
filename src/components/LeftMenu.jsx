@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import swordIcon from "../assets/icons/sword.svg";
 import chestIcon from "../assets/icons/chest.svg";
 import cogIcon from "../assets/icons/cog.svg";
+import WalletConnectModal from "./wallet/WalletConnectModal";
 
 const HexButton = ({ label, icon, onClick }) => {
   return (
@@ -143,9 +144,11 @@ const HexButton = ({ label, icon, onClick }) => {
 
 const LeftMenu = () => {
   const navigate = useNavigate();
+  const [showChoiceModal, setShowChoiceModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const buttons = [
-    { label: "PLAY", icon: swordIcon, action: () => navigate("/gameplay") },
+    { label: "PLAY", icon: swordIcon, action: () => setShowChoiceModal(true) },
     { label: "LEADERBOARD", icon: null },
     { label: "OFFLINE PLAY", icon: null },
     { label: "STORE", icon: chestIcon },
@@ -153,22 +156,104 @@ const LeftMenu = () => {
   ];
 
   return (
-    <div
-      className="absolute z-10 flex flex-col font-extrabold"
-      style={{
-        left: "clamp(10px, 2vw, 32px)",
-        top: "30%",
-      }}
-    >
-      {buttons.map((button, index) => (
-        <HexButton
-          key={index}
-          label={button.label}
-          icon={button.icon}
-          onClick={button.action || (() => {})}
-        />
-      ))}
-    </div>
+    <>
+      <div
+        className="absolute z-10 flex flex-col font-extrabold"
+        style={{
+          left: "clamp(10px, 2vw, 32px)",
+          top: "30%",
+        }}
+      >
+        {buttons.map((button, index) => (
+          <HexButton
+            key={index}
+            label={button.label}
+            icon={button.icon}
+            onClick={button.action || (() => {})}
+          />
+        ))}
+      </div>
+
+      {showChoiceModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowChoiceModal(false)}
+          />
+          <div className="relative w-full max-w-md animate-in fade-in zoom-in duration-300">
+            <div className="relative backdrop-blur-md bg-white/10 rounded-3xl shadow-2xl p-6 md:p-8">
+              <div className="absolute inset-0 gradient-border-1 rounded-3xl opacity-50" />
+              <div className="absolute inset-0 gradient-border-2 rounded-3xl opacity-50" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">
+                    Choose Play Mode
+                  </h2>
+                  <button
+                    onClick={() => setShowChoiceModal(false)}
+                    className="text-white/70 hover:text-white transition-colors p-1"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <button
+                    onClick={() => {
+                      setShowChoiceModal(false);
+                      setShowWalletModal(true);
+                    }}
+                    className="w-full backdrop-blur-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+                  >
+                    <div className="text-center">
+                      <p className="text-white font-semibold text-lg">
+                        Connect Wallet
+                      </p>
+                      <p className="text-white/50 text-sm mt-1">
+                        Connect your starknet wallet
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowChoiceModal(false);
+                      navigate("/gameplay");
+                    }}
+                    className="w-full backdrop-blur-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+                  >
+                    <div className="text-center">
+                      <p className="text-white font-semibold text-lg">
+                        Play Test
+                      </p>
+                      <p className="text-white/50 text-sm mt-1">
+                        Play without wallet connection
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <WalletConnectModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        onConnect={() => navigate("/gameplay")}
+      />
+    </>
   );
 };
 

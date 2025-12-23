@@ -25,8 +25,17 @@ const CenterCharacters = () => {
           maxHeight: "60vh",
           objectFit: "contain",
           display: "block",
+          animation: "gentleBounce 4s ease-in-out infinite",
         }}
       />
+      <style>
+        {`
+          @keyframes gentleBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+          }
+        `}
+      </style>
     </div>
   );
 };

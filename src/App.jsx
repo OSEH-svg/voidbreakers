@@ -9,6 +9,7 @@ import RightMenu from "./components/RightMenu";
 import StatsShowcase from "./components/StatsShowcase";
 import RotatePrompt from "./components/RotatePrompt";
 import Gameplay from "./pages/Gameplay";
+import StarknetProvider from "./providers/StarknetProvider";
 
 const Home = () => {
   return (
@@ -33,14 +34,15 @@ const Home = () => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/gameplay" element={<Gameplay />} />
-      </Routes>
-    </Router>
+    <StarknetProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/gameplay" element={<Gameplay />} />
+        </Routes>
+      </Router>
+    </StarknetProvider>
   );
 }
 
 export default App;
-  

@@ -1,60 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const RotatePrompt = () => {
-  const [isPortrait, setIsPortrait] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkOrientation = () => {
-      const portrait = window.innerHeight > window.innerWidth && window.innerWidth <= 768;
-      setIsPortrait(portrait);
+    const checkDevice = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
     };
 
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+    window.addEventListener("orientationchange", checkDevice);
 
     return () => {
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
+      window.removeEventListener("resize", checkDevice);
+      window.removeEventListener("orientationchange", checkDevice);
     };
   }, []);
 
-  if (!isPortrait) return null;
+  if (!isMobile) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      backgroundColor: '#000000',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      color: 'white',
-      fontFamily: 'JungleAdventurer, serif',
-    }}>
-      <div style={{ 
-        fontSize: '64px', 
-        marginBottom: '20px',
-        animation: 'rotate 2s ease-in-out infinite'
-      }}>
-        📱
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#000000",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        color: "white",
+        fontFamily: "JungleAdventurer, serif",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "64px",
+          marginBottom: "20px",
+          animation: "bounce 2s ease-in-out infinite",
+        }}
+      >
+        💻
       </div>
-      <h2 style={{ fontSize: '24px', marginBottom: '10px' }}>
-        Please rotate your device
+      <h2 style={{ fontSize: "24px", marginBottom: "10px" }}>
+        Please switch to desktop
       </h2>
-      <p style={{ fontSize: '16px', opacity: 0.8 }}>
-        This game is best played in landscape mode
+      <p style={{ fontSize: "16px", opacity: 0.8 }}>
+        This game is best played on desktop
       </p>
       <style>
         {`
-          @keyframes rotate {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(90deg); }
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
           }
         `}
       </style>

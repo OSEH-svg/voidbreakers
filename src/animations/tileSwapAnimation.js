@@ -1,7 +1,5 @@
-// src/animations/tileSwapAnimation.js
 import gsap from "gsap";
 
-// CACHE DOM QUERIES
 const tileCache = new Map();
 
 const getTileElement = (index) => {
@@ -12,7 +10,6 @@ const getTileElement = (index) => {
   return tileCache.get(index);
 };
 
-// CACHE TILE SIZE (calculate once)
 let tileSize = null;
 
 const getTileSize = () => {
@@ -26,13 +23,9 @@ const getTileSize = () => {
   return tileSize;
 };
 
-/**
- * Animates two tiles swapping positions
- * OPTIMIZED: Cached elements, pixel-based movement
- */
+
 export const animateTileSwap = (draggedIndex, replacedIndex, width) => {
   return new Promise((resolve) => {
-    // Get cached elements
     const draggedElement = getTileElement(draggedIndex);
     const replacedElement = getTileElement(replacedIndex);
 
@@ -41,30 +34,25 @@ export const animateTileSwap = (draggedIndex, replacedIndex, width) => {
       return;
     }
 
-    // Calculate grid positions
     const draggedCol = draggedIndex % width;
     const draggedRow = Math.floor(draggedIndex / width);
     const replacedCol = replacedIndex % width;
     const replacedRow = Math.floor(replacedIndex / width);
 
-    // Get tile size (cached)
     const size = getTileSize();
     
-    // Calculate distances in pixels (faster than percentage)
     const deltaX = (replacedCol - draggedCol) * size;
     const deltaY = (replacedRow - draggedRow) * size;
 
-    // Create timeline for synchronized animation
     const tl = gsap.timeline({ onComplete: resolve });
 
-    // Animate both tiles simultaneously
     tl.to(
       draggedElement,
       {
         x: deltaX,
         y: deltaY,
-        duration: 0.25, // Slightly faster
-        ease: "back.out(1.2)", // Less overshoot
+        duration: 0.25, 
+        ease: "back.out(1.2)", 
         zIndex: 10,
       },
       0
@@ -81,10 +69,6 @@ export const animateTileSwap = (draggedIndex, replacedIndex, width) => {
   });
 };
 
-/**
- * Animates tiles swapping back to original positions (for invalid moves)
- * OPTIMIZED: Cached elements, faster shake
- */
 export const animateTileSwapBack = (draggedIndex, replacedIndex) => {
   return new Promise((resolve) => {
     const draggedElement = getTileElement(draggedIndex);
@@ -97,19 +81,18 @@ export const animateTileSwapBack = (draggedIndex, replacedIndex) => {
 
     const tl = gsap.timeline({ onComplete: resolve });
 
-    // Faster shake effect
     tl.to([draggedElement, replacedElement], {
       x: "+=4",
       duration: 0.04,
       yoyo: true,
-      repeat: 2, // Reduced from 3
+      repeat: 2, 
       ease: "power1.inOut",
     }).to(
       [draggedElement, replacedElement],
       {
         x: 0,
         y: 0,
-        duration: 0.2, // Faster reset
+        duration: 0.2, 
         ease: "power2.out",
         zIndex: 1,
       },
@@ -118,10 +101,7 @@ export const animateTileSwapBack = (draggedIndex, replacedIndex) => {
   });
 };
 
-/**
- * Resets tile positions (useful after state update)
- * OPTIMIZED: Cached element
- */
+
 export const resetTilePosition = (index) => {
   const element = getTileElement(index);
   if (element) {
@@ -129,24 +109,18 @@ export const resetTilePosition = (index) => {
       x: 0,
       y: 0,
       zIndex: 1,
-      clearProps: "transform", // Also clear transform property
+      clearProps: "transform", 
     });
   }
 };
 
-/**
- * Resets all tile positions on the board
- * OPTIMIZED: Batch operation, single GSAP call
- */
 export const resetAllTilePositions = (totalTiles) => {
-  // Collect all elements first (use cache)
   const elements = [];
   for (let i = 0; i < totalTiles; i++) {
     const element = getTileElement(i);
     if (element) elements.push(element);
   }
 
-  // Reset all at once (MUCH faster than loop)
   if (elements.length > 0) {
     gsap.set(elements, {
       x: 0,
@@ -157,9 +131,6 @@ export const resetAllTilePositions = (totalTiles) => {
   }
 };
 
-/**
- * Clears the tile cache (call when board resets)
- */
 export const clearTileCache = () => {
   tileCache.clear();
   tileSize = null;
