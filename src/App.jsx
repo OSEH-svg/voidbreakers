@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Background from "./components/Background";
@@ -9,7 +9,8 @@ import RightMenu from "./components/RightMenu";
 import StatsShowcase from "./components/StatsShowcase";
 import RotatePrompt from "./components/RotatePrompt";
 import Gameplay from "./pages/Gameplay";
-import StarknetProvider from "./providers/StarknetProvider";
+
+const StarknetProvider = lazy(() => import("./providers/StarknetProvider"));
 
 const Home = () => {
   return (
@@ -34,15 +35,24 @@ const Home = () => {
 
 function App() {
   return (
-    <StarknetProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/gameplay" element={<Gameplay />} />
-        </Routes>
-      </Router>
-    </StarknetProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+
+        <Route
+          path="/gameplay"
+          element={
+            <Suspense fallback={null}>
+              <StarknetProvider>
+                <Gameplay />
+              </StarknetProvider>
+            </Suspense>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
 export default App;
+
