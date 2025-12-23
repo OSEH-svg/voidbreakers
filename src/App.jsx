@@ -10,7 +10,6 @@ import StatsShowcase from "./components/StatsShowcase";
 import RotatePrompt from "./components/RotatePrompt";
 import Gameplay from "./pages/Gameplay";
 
-const StarknetProvider = lazy(() => import("./providers/StarknetProvider"));
 
 const Home = () => {
   return (
@@ -35,24 +34,11 @@ const Home = () => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-
-        <Route
-          path="/gameplay"
-          element={
-            <Suspense fallback={null}>
-              <StarknetProvider>
-                <Gameplay />
-              </StarknetProvider>
-            </Suspense>
-          }
-        />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/gameplay" element={<Gameplay />} />
+    </Routes>
   );
 }
 
 export default App;
-

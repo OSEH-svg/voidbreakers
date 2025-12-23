@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
 
   base: "./",
-
   build: {
     target: "esnext",
     minify: "esbuild",
@@ -28,9 +27,5 @@ export default defineConfig({
     fs: {
       strict: false,
     },
-  },
-
-  optimizeDeps: {
-    include: ["react", "react-dom"],
   },
 });
