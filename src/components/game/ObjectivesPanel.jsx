@@ -1,4 +1,18 @@
+import greenGem from "../../assets/gameGems/greenGem.png";
+import blueGem from "../../assets/gameGems/blueGem.png";
+import coinSvg from "../../assets/icons/coin.svg";
+import swordSvg from "../../assets/icons/sword.svg";
+
 const ObjectivesPanel = ({ level, progress, movesRemaining }) => {
+  const getAsset = (path) => {
+    const assetMap = {
+      "src/assets/gameGems/greenGem.png": greenGem,
+      "src/assets/gameGems/blueGem.png": blueGem,
+      "src/assets/icons/coin.svg": coinSvg,
+      "src/assets/icons/sword.svg": swordSvg,
+    };
+    return assetMap[path];
+  };
   if (!level) return null;
 
   return (
@@ -27,7 +41,7 @@ const ObjectivesPanel = ({ level, progress, movesRemaining }) => {
                 <div className="flex items-center gap-1.5">
                   {objective.emoji.startsWith("src/") ? (
                     <img
-                      src={objective.emoji}
+                      src={getAsset(objective.emoji)}
                       alt={objective.targetName}
                       className="w-5 h-5 object-contain"
                     />
