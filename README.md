@@ -293,7 +293,7 @@ npm run dev
 
 ### Community
 
-- **Twitter:** https://twitter.com/voidbreakers
+- **Twitter:** https://x.com/lovoidbreakers?s=21
 - **TikTok:** https://www.tiktok.com/@legendofthevoidbreaker
 - **Instagram:** https://www.instagram.com/legend_of_the_voidbreakers/
 
