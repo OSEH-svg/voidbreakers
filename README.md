@@ -97,9 +97,7 @@ The kingdom of **Valdris** has fallen into chaos. The Celestial Crown has been s
 
 #### 3. Match Resolution Flow
 
-```mermaid
-[See Diagram 1 Below]
-```
+![Match Resolution Flow](./src/assets/documentation/Match-Resolution-Flow.png)
 
 #### 4. Board Mechanics
 
@@ -135,9 +133,9 @@ The kingdom of **Valdris** has fallen into chaos. The Celestial Crown has been s
 
 ### Game Flow
 
-```mermaid
-[See Diagram 2 Below]
-```
+![Player Progression Flow](./src/assets/documentation/Player-Progression-Flow.png)
+![Cascade System](./src/assets/documentation/Cascade-Syatem.png)
+<!-- ## <img src="src/assets/documentation/Cascade-Syatem.png" width="200" height="200" alt="arrowimage" style="margin-bottom: -16px;">  -->
 
 ### Progression System
 
@@ -240,11 +238,9 @@ The kingdom of **Valdris** has fallen into chaos. The Celestial Crown has been s
 
 ### Player Progression Flow
 
-```mermaid
-[See Diagram 4 Below]
-```
+![Leaderboard Update and Community](./src/assets/documentation/Leaderboard%20update%20and%20community.png)
 
-## <img src="src/assets/icons/chest.svg" width="40" height="50" alt="chestimage" style="margin-bottom: -16px;">  Monetization
+## <img src="src/assets/icons/chest.svg" width="40" height="50" alt="chestimage" style="margin-bottom: -16px;"> Monetization
 
 ### Revenue Streams
 
@@ -260,7 +256,7 @@ The kingdom of **Valdris** has fallen into chaos. The Celestial Crown has been s
 
 ---
 
-## <img src="src/assets/icons/cog.svg" width="40" height="50" alt="cogimage" style="margin-bottom: -16px;">  Technical Specifications
+## <img src="src/assets/icons/cog.svg" width="40" height="50" alt="cogimage" style="margin-bottom: -16px;"> Technical Specifications
 
 - Voidbreakers is developed with a progressive architecture, starting as a performant web-based prototype and evolving into a full cross-platform game with onchain systems.
 
@@ -271,7 +267,7 @@ The kingdom of **Valdris** has fallen into chaos. The Celestial Crown has been s
 
 ---
 
-## <img src="src/assets/gameGems/greenGem.png" width="30" height="40" alt="arrowimage" style="margin-bottom: -12px;">  Installation & Run Locally
+## <img src="src/assets/gameGems/greenGem.png" width="30" height="40" alt="arrowimage" style="margin-bottom: -12px;"> Installation & Run Locally
 
 ### Prerequisites
 
